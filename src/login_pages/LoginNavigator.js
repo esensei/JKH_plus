@@ -17,10 +17,10 @@ import { AuthContext } from '../contexts/AuthContext'
    const { signIn } = React.useContext(AuthContext);
 
 
-   const [email, setEmail] = React.useState('ddd2@yandex.ru');
-   const [password, setPassword] = React.useState('444322asd');
+   const [email, setEmail] = React.useState('tinkoff@yandex.ru');
+   const [password, setPassword] = React.useState('123');
 
-
+  console.log("Сразу тут")
    //
     const {
       circle,

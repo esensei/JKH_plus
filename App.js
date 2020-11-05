@@ -1,77 +1,22 @@
 import 'react-native-gesture-handler';
-
-
 import * as React from 'react';
 import {
-  ActivityIndicator,
   AsyncStorage,
-  Button,
-  StyleSheet,
-  Text,
-  TextInput,
-  View
 } from 'react-native'
+import store from './src/stores'
+import { Provider } from 'react-redux'
+
+import { createDrawerNavigator } from '@react-navigation/drawer';
+
+
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import LinearGradient from "react-native-linear-gradient"
-import { API_URL } from './src/config'
-import SignInScreen from './src/login_pages/LoginNavigator'
-import { AuthContext } from './src/contexts/AuthContext'
-const axios = require('axios')
+import TabNavigator from './src/navigation/TabNavigator'
+import StackNavigator from './src/navigation/StackNavigator'
+import {takeToken} from './src/actions'
 
+const App = () => {
+  const Drawer = createDrawerNavigator();
 
-function SplashScreen() {
-  const { container, indicator } = styles
-  return (
-    <LinearGradient colors={['rgba(61,78,129,1)', 'rgba(87,83,201,1)', 'rgba(110,127,243,1)']} style={container}>
-      <ActivityIndicator styles={indicator} />
-    </LinearGradient>
-  )
-}
-
-function HomeScreen() {
-  const { signOut } = React.useContext(AuthContext);
-
-  return (
-    <View>
-      <Text>Signed in!</Text>
-      <Button title="Sign out" onPress={signOut} />
-    </View>
-  );
-}
-
-const Stack = createStackNavigator();
-
- const App = ({ navigation }) => {
-  const [state, dispatch] = React.useReducer(
-    (prevState, action) => {
-      switch (action.type) {
-        case 'RESTORE_TOKEN':
-          return {
-            ...prevState,
-            userToken: action.token,
-            isLoading: false,
-          };
-        case 'SIGN_IN':
-          return {
-            ...prevState,
-            isSignout: false,
-            userToken: action.token,
-          };
-        case 'SIGN_OUT':
-          return {
-            ...prevState,
-            isSignout: true,
-            userToken: null,
-          };
-      }
-    },
-    {
-      isLoading: true,
-      isSignout: false,
-      userToken: null,
-    }
-  );
 
   React.useEffect(() => {
     const bootstrapAsync = async () => {
@@ -80,76 +25,24 @@ const Stack = createStackNavigator();
         userToken = await AsyncStorage.getItem('userToken');
       } catch (e) {
       }
-
-      dispatch({ type: 'RESTORE_TOKEN', token: userToken });
+      takeToken(userToken)
+      console.log("токен "  + userToken)
     };
 
-    bootstrapAsync();
+     bootstrapAsync();
   }, []);
 
-  const authContext = React.useMemo(
-    () => ({
-      signIn: async data => {
-        console.log(data)
-        console.log(API_URL + '/auth/sign-in')
 
-        axios.post(API_URL + '/auth/sign-in', data)
-          .then(response => {
-            console.log(response.data.token)
-            dispatch({ type: 'SIGN_IN', token: response.data.token });
-
-          })
-          .catch(error => {
-            console.log(error.response)
-            alert('Неправильный логин или пароль')
-          })
-
-      },
-      signOut: () => dispatch({ type: 'SIGN_OUT' }),
-      signUp: async data => {
-
-        dispatch({ type: 'SIGN_IN', token: 'dummy-auth-token' });
-      },
-    }),
-    []
-  );
 
   return (
-    <AuthContext.Provider value={authContext}>
+    <Provider store={store}>
       <NavigationContainer>
-        <Stack.Navigator>
-          {state.isLoading ? (
-            <Stack.Screen name="Splash" component={SplashScreen} />
-          ) : state.userToken == null ? (
-
-            <Stack.Screen
-              name="SignIn"
-              component={SignInScreen}
-              options={{
-
-                headerShown: false,
-                animationTypeForReplace: state.isSignout ? 'pop' : 'push',
-              }}
-            />
-          ) : (
-
-            <Stack.Screen name="Home" component={HomeScreen} />
-          )}
-        </Stack.Navigator>
+          <Drawer.Navigator>
+             <Drawer.Screen name="Login" component={StackNavigator}  />
+             <Drawer.Screen name="App" component={TabNavigator} />
+          </Drawer.Navigator>
       </NavigationContainer>
-    </AuthContext.Provider>
+    </Provider>
   );
 }
 export default App
-const styles = StyleSheet.create({
-  indicator: {
-    flex: 1,
-    alignSelf: 'center'
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-
-  }
-})
