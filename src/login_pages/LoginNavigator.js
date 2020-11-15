@@ -6,22 +6,36 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  AsyncStorage
 } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
+import axios from 'axios'
+import { API_URL } from '../config'
 
+const SignInScreen =  (props)  => {
 
-import { AuthContext } from '../contexts/AuthContext'
-
-
- const SignInScreen =  (props)  => {
-   const { signIn } = React.useContext(AuthContext);
 
 
    const [email, setEmail] = React.useState('tinkoff@yandex.ru');
    const [password, setPassword] = React.useState('123');
 
-  console.log("Сразу тут")
-   //
+    const logIn = () => {
+      axios.post(API_URL + '/auth/sign-in', { email, password })
+        .then(response => {
+          console.log(response.data.token)
+
+          AsyncStorage.setItem('userToken',response.data.token)
+            .then(() => props.navigation.navigate('App')
+            )
+            .catch(e => console.log(e))
+
+
+        })
+        .catch(error => {
+          console.log(error.response)
+          alert('Неправильный логин или пароль')
+        })
+    }
     const {
       circle,
       buttonStyle,
@@ -50,7 +64,7 @@ import { AuthContext } from '../contexts/AuthContext'
             value={password}
             placeholder="Пароль"
           />
-          <TouchableOpacity style={buttonContainer} title="Войти" onPress={() => signIn({ email, password })}>
+          <TouchableOpacity style={buttonContainer} title="Войти" onPress={() => logIn()}>
             <Text style={buttonStyle}>Войти</Text>
           </TouchableOpacity>
         </View>
